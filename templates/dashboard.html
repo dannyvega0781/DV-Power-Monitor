@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>DV Power Monitor</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .historial-tabla {
+            overflow-x: auto;
+        }
+
+        .historial-tabla table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .historial-tabla th,
+        .historial-tabla td {
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+            vertical-align: top;
+        }
+
+        .historial-tabla td:last-child {
+            min-width: 220px;
+            overflow-wrap: anywhere;
+        }
+
+        .historial-tabla th {
+            color: #7dd3fc;
+        }
+
+        .historial-acciones button {
+            background: #334155;
+            color: white;
+            border: 1px solid #64748b;
+            border-radius: 7px;
+            padding: 9px 15px;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .historial-acciones button:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="encabezado-principal">
+
+    <div class="encabezado-titulo">
+        <h1>DV Power Monitor</h1>
+        <h3>MODO SIMULACIÓN</h3>
+        <p>Sistema de Monitoreo Eléctrico DC</p>
+    </div>
+
+    <div class="panel-reloj">
+        <h3 class="reloj-titulo">FECHA Y HORA</h3>
+
+        <div id="relojDigital">--:--:--</div>
+        <div id="fechaActual">Cargando fecha...</div>
+
+        <p>Puerto Rico (AST)</p>
+    </div>
+
+</header>
+
+<main>
+
+    <!-- TARJETAS DE MEDICIÓN -->
+
+    <section class="mediciones">
+
+        <div class="tarjeta voltaje">
+            <h2>VOLTAJE</h2>
+            <p id="valorVoltaje">12.10 V</p>
+        </div>
+
+        <div class="tarjeta corriente">
+            <h2>CORRIENTE TOTAL</h2>
+            <p id="valorCorriente">0.480 A</p>
+        </div>
+
+        <div class="tarjeta potencia">
+            <h2>POTENCIA TOTAL</h2>
+            <p id="valorPotencia">5.81 W</p>
+        </div>
+
+        <div class="tarjeta energia">
+            <h2>ENERGÍA ACUMULADA</h2>
+            <p id="valorEnergia">0.00000 Wh</p>
+        </div>
+
+    </section>
+
+    <!-- GRÁFICA -->
+
+    <section class="panel">
+
+        <h2>Telemetría en vivo</h2>
+
+        <p>Datos simulados - No son lecturas reales</p>
+
+        <p class="nota">
+            Haz clic en la leyenda para mostrar
+            u ocultar una medición.
+        </p>
+
+        <div class="contenedor-grafica">
+            <canvas id="graficaTelemetria"></canvas>
+        </div>
+
+    </section>
+
+    <!-- INDICADORES Y ALERTAS -->
+
+    <section class="panel">
+
+        <h2>Panel de control y alertas</h2>
+
+        <p>Interruptores virtuales - Solo simulación</p>
+
+        <div class="panel-controles">
+
+            <div class="control-box">
+
+                <h3>LED 1</h3>
+
+                <span class="led-indicador encendido"
+                      id="indicadorLed1"></span>
+
+                <p id="estadoLed1">ENCENDIDA</p>
+
+                <label class="switch">
+                    <input type="checkbox"
+                           id="led1"
+                           aria-label="Bombilla LED 1"
+                           checked>
+
+                    <span class="slider"></span>
+                </label>
+
+                <span class="nota">ON / OFF</span>
+
+            </div>
+
+            <div class="control-box">
+
+                <h3>LED 2</h3>
+
+                <span class="led-indicador encendido"
+                      id="indicadorLed2"></span>
+
+                <p id="estadoLed2">ENCENDIDA</p>
+
+                <label class="switch">
+                    <input type="checkbox"
+                           id="led2"
+                           aria-label="Bombilla LED 2"
+                           checked>
+
+                    <span class="slider"></span>
+                </label>
+
+                <span class="nota">ON / OFF</span>
+
+            </div>
+
+            <div class="control-box alerta-box">
+
+                <h3>ALERTA</h3>
+
+                <span class="led-indicador apagado"
+                      id="indicadorAlerta"></span>
+
+                <p id="estadoAlerta" aria-live="polite">
+                    Sistema normal
+                </p>
+
+                <button type="button" id="botonReset">
+                    RESET
+                </button>
+
+                <label class="falla-simulada">
+                    <input type="checkbox"
+                           id="simularFalla">
+                    Simular voltaje bajo
+                </label>
+
+            </div>
+
+            <div class="control-box email-box">
+
+                <h3>ENVIAR POR EMAIL</h3>
+
+                <span class="led-indicador apagado"
+                      id="indicadorEmail"></span>
+
+                <p id="estadoEmail" aria-live="polite">
+                    Sin enviar
+                </p>
+
+                <button type="button" id="botonEmail">
+                    Enviar alerta
+                </button>
+
+                <p class="nota">Modo simulación</p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- COMPONENTES -->
+
+    <section class="panel">
+
+        <h2>Componentes del sistema</h2>
+
+        <p>Sensor: 1 INA219</p>
+        <p>Controlador: Arduino Mega 2560</p>
+        <p>Display: LCD 16x2</p>
+        <p>Servidor: Raspberry Pi 4</p>
+        <p>Estado: Modo simulación</p>
+
+    </section>
+
+    <!-- NOTIFICACIONES E HISTORIAL -->
+
+    <section class="panel alertas">
+
+        <h2>Notificaciones</h2>
+
+        <label>
+            <input type="checkbox" checked disabled>
+            Correo electrónico automático (modo real)
+        </label>
+
+        <p>SMS: Ilustrativo - No disponible</p>
+        <p>WhatsApp: Ilustrativo - No disponible</p>
+
+        <h3>Historial de alertas</h3>
+
+        <p class="nota">
+            Eventos guardados en SQLite.
+            Hora de Puerto Rico.
+            La aceptación por Gmail no confirma
+            la entrega al buzón.
+        </p>
+
+        <div class="historial-acciones">
+
+            <button type="button" id="historialRecientes">
+                Más recientes
+            </button>
+
+            <button type="button"
+                    id="historialAnteriores"
+                    disabled>
+                Anteriores
+            </button>
+
+        </div>
+
+        <p id="historialEstado" role="status">
+            Cargando historial...
+        </p>
+
+        <div class="historial-tabla">
+            <table>
+
+                <thead>
+                    <tr>
+                        <th scope="col">Fecha y hora (PR)</th>
+                        <th scope="col">Evento</th>
+                        <th scope="col">Detalle</th>
+                    </tr>
+                </thead>
+
+                <tbody id="historialFilas"></tbody>
+
+            </table>
+        </div>
+
+    </section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+
+<script src="{{ url_for('static', filename='js/graficas.js') }}"></script>
+
+<script src="{{ url_for('static', filename='js/reloj.js') }}"></script>
+
+<script src="{{ url_for('static', filename='js/historial.js', v='1') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,782 @@
+{% if vista == 'barra' %}
+<style>
+    .navegacion {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 18px;
+    }
+
+    .navegacion a {
+        color: #7dd3fc;
+    }
+
+    .navegacion form {
+        display: inline;
+    }
+
+    .navegacion button {
+        padding: 9px 14px;
+        background: #334155;
+        color: white;
+        border: 1px solid #64748b;
+        border-radius: 7px;
+        cursor: pointer;
+    }
+</style>
+{% endif %}
+
+{% if vista != 'barra' %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>DV Power Monitor</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .portal {
+            max-width: 1000px;
+            margin: 25px auto;
+        }
+
+        .opciones {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .portal a,
+        .navegacion a {
+            color: #7dd3fc;
+        }
+
+        .boton {
+            display: inline-block;
+            padding: 11px 16px;
+            background: #2563eb;
+            color: white !important;
+            border-radius: 8px;
+            text-decoration: none;
+            margin: 8px 8px 8px 0;
+        }
+
+        .portal label {
+            display: block;
+            margin: 12px 0;
+        }
+
+        .portal input {
+            display: block;
+            width: 100%;
+            padding: 11px;
+            background: #0b1220;
+            color: white;
+            border: 1px solid #475569;
+            border-radius: 7px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .portal button,
+        .navegacion button {
+            padding: 10px 16px;
+            background: #334155;
+            border: 1px solid #64748b;
+            border-radius: 7px;
+            color: white;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+
+        .portal form {
+            max-width: 480px;
+        }
+
+        .error {
+            color: #f87171;
+        }
+
+        .exito {
+            color: #34d399;
+        }
+
+        .aviso {
+            color: #fbbf24;
+        }
+
+        .tabla {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td,
+        th {
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+            text-align: left;
+            overflow-wrap: anywhere;
+        }
+
+        .navegacion {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 18px;
+        }
+
+        .navegacion form {
+            display: inline;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+<main class="portal">
+
+    <header>
+        <h1>DV Power Monitor</h1>
+
+        <p>
+            Monitoreo de condiciones eléctricas de equipos DC,
+            alertas y registro de eventos.
+        </p>
+    </header>
+{% endif %}
+
+<nav class="navegacion">
+
+    <a href="{{ url_for('inicio') }}">Inicio</a>
+
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+
+    <a href="{{ url_for('historial_pagina') }}"
+       target="_blank"
+       rel="noopener">
+        Historial
+    </a>
+
+    {% if admin %}
+
+        <span>Administrador</span>
+
+        <a href="{{ url_for('configuracion_admin') }}">
+            Configuración
+        </a>
+
+        <a href="{{ url_for('administrar_usuarios') }}">
+            Usuarios
+        </a>
+
+    {% elif usuario %}
+
+        <span>Usuario: {{ usuario.username }}</span>
+
+        <a href="{{ url_for('mi_cuenta') }}">
+            Mi cuenta
+        </a>
+
+    {% else %}
+
+        <span>Visitante · Solo lectura</span>
+
+        <a href="{{ url_for('usuario_login') }}">
+            Iniciar sesión
+        </a>
+
+    {% endif %}
+
+    {% if admin or usuario %}
+        <form method="post"
+              action="{{ url_for('cuenta_salir') }}">
+
+            <input type="hidden"
+                   name="csrf"
+                   value="{{ csrf }}">
+
+            <button type="submit">Cerrar sesión</button>
+
+        </form>
+    {% endif %}
+
+</nav>
+
+{% if vista != 'barra' %}
+
+    {% for categoria, mensaje in get_flashed_messages(
+        with_categories=true
+    ) %}
+        <p class="{{ categoria }}" role="status">
+            {{ mensaje }}
+        </p>
+    {% endfor %}
+
+    {% if vista == 'inicio' %}
+
+        <section class="opciones">
+
+            <article class="panel">
+                <h2>Visitante</h2>
+
+                <p>
+                    Consulta las mediciones sin contraseña.
+                    No recibirás correos.
+                </p>
+
+                <a class="boton"
+                   href="{{ url_for('dashboard') }}">
+                    {{ 'Abrir dashboard' if admin or usuario
+                       else 'Entrar como visitante' }}
+                </a>
+            </article>
+
+            <article class="panel">
+                <h2>Usuario</h2>
+
+                <p>
+                    Accede a tu cuenta o crea una.
+                    Hasta {{ limite }} usuarios registrados.
+                </p>
+
+                <a class="boton"
+                   href="{{ url_for('usuario_login') }}">
+                    Iniciar sesión
+                </a>
+
+                <a href="{{ url_for('registro') }}">
+                    Crear usuario
+                </a>
+            </article>
+
+            <article class="panel">
+                <h2>Administrador</h2>
+
+                <p>
+                    Configura destinatarios y gestiona usuarios.
+                </p>
+
+                <a class="boton"
+                   href="{{ url_for('acceso_admin') }}">
+                    Acceso administrador
+                </a>
+            </article>
+
+        </section>
+
+        <section class="panel">
+            <h2>Estado del sistema</h2>
+
+            <p id="resumenEstado">Consultando...</p>
+            <p id="resumenServidor"></p>
+
+            <a href="{{ url_for('acerca') }}">
+                Acerca del sistema
+            </a>
+        </section>
+
+        <script>
+            (() => {
+                let ocupado = false;
+
+                async function consultar() {
+                    if (ocupado) {
+                        return;
+                    }
+
+                    ocupado = true;
+
+                    const control = new AbortController();
+
+                    const limite = setTimeout(
+                        () => control.abort(),
+                        3000
+                    );
+
+                    try {
+                        const respuesta = await fetch(
+                            "/api/portal/estado",
+                            {
+                                cache: "no-store",
+                                signal: control.signal
+                            }
+                        );
+
+                        if (!respuesta.ok) {
+                            throw new Error();
+                        }
+
+                        const datos = await respuesta.json();
+
+                        document.getElementById(
+                            "resumenEstado"
+                        ).textContent =
+                            (
+                                datos.connected
+                                    ? "Arduino conectado"
+                                    : "Arduino desconectado"
+                            ) +
+                            " · " +
+                            (
+                                datos.valid
+                                    ? datos.state
+                                    : "Esperando datos válidos"
+                            ) +
+                            " · SQLite: " +
+                            (
+                                datos.storage_ok
+                                    ? "sin error actual"
+                                    : "revisar almacenamiento"
+                            ) +
+                            (
+                                datos.age_seconds !== null
+                                    ? " · Última lectura hace " +
+                                      datos.age_seconds + " s"
+                                    : ""
+                            );
+
+                        document.getElementById(
+                            "resumenServidor"
+                        ).textContent =
+                            "Servidor: " + datos.server;
+
+                    } catch (error) {
+                        document.getElementById(
+                            "resumenEstado"
+                        ).textContent =
+                            "No se pudo consultar el servidor.";
+
+                    } finally {
+                        clearTimeout(limite);
+                        ocupado = false;
+                    }
+                }
+
+                consultar();
+                setInterval(consultar, 2000);
+            })();
+        </script>
+
+    {% elif vista == 'registro' %}
+
+        <section class="panel">
+
+            <h2>Crear usuario</h2>
+
+            <p>
+                Verifica tu correo desde Mi cuenta después de iniciar sesión.
+                Recibirás alertas mientras mantengas abierta una página del sistema.
+            </p>
+
+            <form method="post">
+
+                <input type="hidden"
+                       name="csrf"
+                       value="{{ csrf }}">
+
+                <label>
+                    Nombre de usuario
+                    <input name="username"
+                           minlength="3"
+                           maxlength="30"
+                           pattern="[A-Za-z0-9_]{3,30}"
+                           autocomplete="username"
+                           required>
+                </label>
+
+                <label>
+                    Tu único email
+                    <input name="email"
+                           type="email"
+                           maxlength="254"
+                           autocomplete="email"
+                           required>
+                </label>
+
+                <label>
+                    Contraseña (10 a 128 caracteres)
+                    <input name="password"
+                           type="password"
+                           minlength="10"
+                           maxlength="128"
+                           autocomplete="new-password"
+                           required>
+                </label>
+
+                <label>
+                    Confirmar contraseña
+                    <input name="confirmar"
+                           type="password"
+                           minlength="10"
+                           maxlength="128"
+                           autocomplete="new-password"
+                           required>
+                </label>
+
+                <button type="submit">Crear cuenta</button>
+
+            </form>
+        </section>
+
+    {% elif vista == 'login' %}
+
+        <section class="panel">
+
+            <h2>Iniciar sesión como usuario</h2>
+
+            <form method="post">
+
+                <input type="hidden"
+                       name="csrf"
+                       value="{{ csrf }}">
+
+                <label>
+                    Usuario
+                    <input name="username"
+                           maxlength="30"
+                           autocomplete="username"
+                           required>
+                </label>
+
+                <label>
+                    Contraseña
+                    <input name="password"
+                           type="password"
+                           maxlength="128"
+                           autocomplete="current-password"
+                           required>
+                </label>
+
+                <button type="submit">Entrar</button>
+
+            </form>
+
+            <a href="{{ url_for('registro') }}">
+                Crear usuario
+            </a>
+
+        </section>
+
+    {% elif vista == 'perfil' %}
+
+        <section class="panel">
+
+            <h2>Mi cuenta: {{ usuario.username }}</h2>
+
+            <p>
+                Solo puedes modificar tu propia cuenta.
+                Los avisos personales requieren correo verificado
+                y una página del sistema abierta.
+                Al cerrar sesión se detienen; al cerrar todas
+                las páginas, en hasta 90 segundos.
+            </p>
+
+            <form method="post">
+
+                <input type="hidden"
+                       name="csrf"
+                       value="{{ csrf }}">
+
+                <input type="hidden"
+                       name="accion"
+                       value="email">
+
+                <label>
+                    Tu email (vacío para quitarlo)
+                    <input name="email"
+                           type="email"
+                           maxlength="254"
+                           value="{{ usuario.email or '' }}"
+                           autocomplete="email">
+                </label>
+
+                <label>
+                    Contraseña actual
+                    <input name="actual"
+                           type="password"
+                           maxlength="128"
+                           autocomplete="current-password"
+                           required>
+                </label>
+
+                <button type="submit">Guardar email</button>
+
+            </form>
+        </section>
+
+        <section class="panel">
+            <h2>Avisos personales</h2>
+
+            {% if personal_verified(usuario) %}
+
+                <p>
+                    Correo verificado. Los avisos están
+                    habilitados durante tu sesión activa.
+                </p>
+
+            {% elif usuario.email %}
+
+                <p>
+                    Correo pendiente de verificar.
+                    El código vence en 15 minutos
+                    y permite 5 intentos.
+                </p>
+
+                <form method="post"
+                      action="{{ url_for('personal_send_code') }}">
+
+                    <input type="hidden"
+                           name="csrf"
+                           value="{{ csrf }}">
+
+                    <button type="submit">
+                        Enviar código de verificación
+                    </button>
+                </form>
+
+                <form method="post"
+                      action="{{ url_for('personal_confirm_code') }}">
+
+                    <input type="hidden"
+                           name="csrf"
+                           value="{{ csrf }}">
+
+                    <label>
+                        Código recibido por email
+                        <input name="codigo"
+                               inputmode="numeric"
+                               pattern="[0-9]{6}"
+                               minlength="6"
+                               maxlength="6"
+                               autocomplete="one-time-code"
+                               required>
+                    </label>
+
+                    <button type="submit">
+                        Verificar correo
+                    </button>
+                </form>
+
+            {% else %}
+
+                <p>
+                    Guarda un correo y verifícalo
+                    para recibir avisos.
+                </p>
+
+            {% endif %}
+        </section>
+
+        <section class="panel">
+
+            <h2>Cambiar contraseña</h2>
+
+            <form method="post">
+
+                <input type="hidden"
+                       name="csrf"
+                       value="{{ csrf }}">
+
+                <input type="hidden"
+                       name="accion"
+                       value="password">
+
+                <label>
+                    Contraseña actual
+                    <input name="actual"
+                           type="password"
+                           maxlength="128"
+                           autocomplete="current-password"
+                           required>
+                </label>
+
+                <label>
+                    Nueva contraseña
+                    <input name="nuevo"
+                           type="password"
+                           minlength="10"
+                           maxlength="128"
+                           autocomplete="new-password"
+                           required>
+                </label>
+
+                <label>
+                    Confirmar nueva contraseña
+                    <input name="confirmar"
+                           type="password"
+                           minlength="10"
+                           maxlength="128"
+                           autocomplete="new-password"
+                           required>
+                </label>
+
+                <button type="submit">
+                    Actualizar contraseña
+                </button>
+
+            </form>
+        </section>
+
+        <section class="panel">
+
+            <h2>Eliminar mi cuenta</h2>
+
+            <p>
+                La eliminación es permanente.
+                Los registros del equipo se conservan.
+            </p>
+
+            <form method="post">
+
+                <input type="hidden"
+                       name="csrf"
+                       value="{{ csrf }}">
+
+                <input type="hidden"
+                       name="accion"
+                       value="eliminar">
+
+                <label>
+                    Confirma tu contraseña
+                    <input name="actual"
+                           type="password"
+                           maxlength="128"
+                           autocomplete="current-password"
+                           required>
+                </label>
+
+                <button type="submit">
+                    Eliminar mi cuenta
+                </button>
+
+            </form>
+        </section>
+
+    {% elif vista == 'usuarios' %}
+
+        <section class="panel">
+
+            <h2>
+                Usuarios registrados:
+                {{ usuarios|length }} / {{ limite }}
+            </h2>
+
+            <p>
+                Las contraseñas no se muestran.
+                Los usuarios reciben avisos con correo verificado
+                y sesión activa.
+                Las direcciones registradas respetan esta regla
+                aunque estén en la lista general.
+            </p>
+
+            <div class="tabla">
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Email</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                    {% for persona in usuarios %}
+                        <tr>
+                            <td>{{ persona.username }}</td>
+
+                            <td>
+                                {{ persona.email or 'Sin email' }}
+                            </td>
+
+                            <td>
+                                <form method="post">
+
+                                    <input type="hidden"
+                                           name="csrf"
+                                           value="{{ csrf }}">
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="{{ persona.id }}">
+
+                                    <button type="submit">
+                                        Eliminar usuario
+                                    </button>
+
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+
+        </section>
+
+    {% elif vista == 'acerca' %}
+
+        <section class="panel">
+
+            <h2>Acerca del sistema</h2>
+
+            <p>
+                Arduino Mega 2560 · Un INA219 (0x40) · LCD 16×2.
+            </p>
+
+            <p>
+                Cuatro módulos LED de 12 V,
+                organizados en dos grupos,
+                representan las condiciones de un equipo.
+            </p>
+
+            <p>
+                Un sensor mide el consumo total.
+                No identifica cuál grupo está apagado
+                ni confirma la causa física de una falla.
+            </p>
+
+            <p>
+                Los interruptores físicos permiten provocar
+                cambios de carga para la demostración.
+                Las alertas y el historial apoyan la respuesta
+                y documentación de condiciones anormales.
+            </p>
+
+            <p>
+                El tiempo observado en condición anormal
+                no equivale automáticamente a downtime
+                de producción confirmado.
+            </p>
+
+            <p>
+                SMS y WhatsApp:
+                ilustrativos, no implementados.
+            </p>
+
+        </section>
+
+    {% endif %}
+
+</main>
+</body>
+</html>
+{% endif %}
