@@ -2,7 +2,7 @@
 #include <Adafruit_INA219.h>
 #include <LiquidCrystal.h>
 
-// DV POWER MONITOR — código compartido por el autor en la conversación.
+// DV POWER MONITOR — código compartido 
 // Arduino Mega 2560 + INA219 + LCD 16x2 + indicadores LED.
 Adafruit_INA219 ina219(0x40);
 LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
